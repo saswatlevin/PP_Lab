@@ -1,0 +1,179 @@
+
+
+How to make a bootable OS X 10.9 Mavericks USB install drive on LINUX
+This guide describes step by step how you can make a Mavericks USB installer on Linux without any running OS X.
+
+Prerequisites
+
+-empty USB stick of minimum size 8GB
+-copy of Mavericks
+-working Linux (virtualized is also OK) with following installed packages:
+hfsplus, hfsprogs, gparted, p7zip
+-at least 15GB free space on your system
+-time :)
+
+Steps
+
+1. Check the downloaded installer
+
+You should have something similar location with the main DMG file
+
+"YOUR_PATH/Install OS X Mavericks.app/Contents/SharedSupport"
+
+Open a terminal window, go to this directory and check the MD5
+
+
+
+cd YOUR_PATH/Install\ OS\ X\ Mavericks.app/Contents/SharedSupport/
+md5sum InstallESD.dmg
+
+10.9 (13A603) f222952400db8535c03697c3293e168e
+10.9.1 (13B42) f67bf055be1a494eb2547e17e74a0c13
+10.9.2 (13C64) fdb286dd1a321eb9ae1bd136d5d388c3
+10.9.3 (13D65) 0c45a5fec46d157e8f892c11b840daf2
+10.9.4 (13E28) 9d9aeba42a9fb2cf6d2f2e8c18827f83
+10.9.5 (13F34) a418ad26903961b060d7df02884a6511
+
+2. Prepare the USB stick
+
+Create a new MBR partition layout on your USB stick and add a primary HFS+ filesystem.
+
+I prefer using gparted. Steps in this program:
+-choose your USB stick at upper right corner
+-go to menu: Device / Create partition table and select msdos
+-go to menu: Partition / New and create a primary parition with HFS+ filesystem. The label can be osx86.
+-go to menu Edit and apply all your pending changes
+
+If the above is done, mount the newly created partition to /media/osx86/
+
+3. Copy OS X's files
+
+The InstallESD.dmg contains another InstallESD.dmg file. We need that.
+
+cd YOUR_PATH/Install\ OS\ X\ Mavericks.app/Contents/SharedSupport/
+7z x InstallESD.dmg InstallMacOSX.pkg/InstallESD.dmg
+
+We got the a new InstallESD.dmg file. This file contains an HFS partition, we are extracting it.
+
+cd InstallMacOSX.pkg/
+7z x InstallESD.dmg 3.hfs
+
+Now we can delete the unnecessary DMG file.
+
+rm InstallESD.dmg
+
+Mount the HFS file, do this with root rights (sudo or su - depending on your distribution)
+
+sudo mkdir /mnt/osx
+sudo mount -o loop 3.hfs /mnt/osx/
+
+Extract the HFS partition from the BaseSystem.dmg
+
+mkdir base
+cd base
+
+(We are here: YOUR_PATH/Install\ OS\ X\ Mavericks.app/Contents/SharedSupport/InstallMacOSX.pkg/base)
+
+7z x /mnt/osx/BaseSystem.dmg 3.hfs
+
+Mount the new HFS file as well, do this with root rights
+
+sudo mkdir /mnt/base
+sudo mount -o loop 3.hfs /mnt/base/
+
+Copy the files to the USB stick, do this with root rights
+
+I suppose your USB drive is mounted here: /media/osx86/
+
+sudo cp -r /mnt/base/. /media/osx86
+sudo rm /media/osx86/System/Installation/Packages
+sudo cp -r /mnt/osx/Packages /media/osx86/System/Installation
+
+Clean, do this with root rights
+
+sudo umount /mnt/base
+sudo rmdir /mnt/base
+sudo umount /mnt/osx
+sudo rmdir /mnt/osx
+
+Delete other unnecessary files
+
+We are still here: YOUR_PATH/Install\ OS\ X\ Mavericks.app/Contents/SharedSupport/InstallMacOSX.pkg/base
+
+cd ../../
+rm -r InstallMacOSX.pkg
+
+Kernel is in the Packages/BaseSystemBinaries.pkg. We are extracting it.
+
+mkdir kernel
+cd kernel
+7z x -so /media/osx86/System/Installation/Packages/BaseSystemBinaries.pkg Payload | bunzip2 | cpio -i
+
+Copy kernel to the right place, do this with root rights
+
+sudo cp mach_kernel /media/osx86/
+
+Delete the garbage
+
+cd ..
+rm -r -f kernel/
+
+ 
+4. Install the Chameleon bootloader
+
+Download the binary version of it and extract it
+http://www.insanelymac.com/forum/files/file/59-chameleon-22-svn/
+
+Find the dev file depending on your mount point:
+
+mount | grep osx86
+
+For example I got this:
+/dev/sdb1 on /media/osx86 type hfsplus (rw,nosuid,nodev,relatime,umask=22,uid=0,gid=0,nls=utf8,uhelper=udisks)
+
+So the dev file will be /dev/sdb for the writing of MBR:
+
+sudo dd bs=446 count=1 if=boot0 of=/dev/sdb
+
+and /dev/sdb1 for the writing the begining of the HFS+ partition:
+
+sudo dd if=boot1h of=/dev/sdb1
+
+Copy the boot file to the root of your USB stick
+
+sudo cp boot /media/osx86
+
+ 
+5. Install essential kexts
+
+FakeSMC
+Download and extract it
+http://www.insanelymac.com/forum/files/file/107-fakesmc-w-haswell-cpu-sensor-for-1089/
+
+sudo cp -r FakeSMC.kext/ /media/osx86/System/Library/Extensions/
+
+NullCPUPowerManagement
+Download and extract it
+http://www.osx86.net/files/file/3465-nullcpupowermanagement-32-64-bit/
+
+
+
+sudo cp -r NullCPUPowerManagement.kext/ /media/osx86/System/Library/Extensions/
+
+6. Optional - Install MBR patch
+
+http://www.insanelymac.com/forum/files/file/145-mavericks-mbr-patch/
+
+
+
+sudo tar zxvf Mavericks_GM_MBR_Patch.tar.gz -C /media/osx86/
+
+7. Troubleshooting
+ 
+If you get this weird error message: "There was a problem reading the Mac OS X Installation disc. Carefully clean the disc, and then try reinstalling.", use the below command
+
+
+
+sudo chmod 6755 /media/osx86/System/Library/PrivateFrameworks/Install.framework/Versions/A/Resources/runner
+
+8. Finally DONE :) 
