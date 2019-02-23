@@ -21,10 +21,10 @@ int main(void) {
         scanf("%d",&A[i]);
     }
     
-    printf("\nEnter B");
+    /*printf("\nEnter B");
     for (i = 0; i < LIST_SIZE; ++i) {
         scanf("%d",&B[i]);
-    }
+    }*/
 
     //Load the kernel source code into the array source_str
 
@@ -62,18 +62,18 @@ int main(void) {
 
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, LIST_SIZE
             * sizeof(int), NULL, &ret);
-    cl_mem b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, LIST_SIZE
-            * sizeof(int), NULL, &ret);
-    cl_mem c_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, LIST_SIZE
+    /*cl_mem b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, LIST_SIZE
+            * sizeof(int), NULL, &ret);*/
+    cl_mem c_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, LIST_SIZE
             * sizeof(int), NULL, &ret);
 
     //Copy the lists A and B to their respective memory buffers
     ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0, LIST_SIZE
             * sizeof(int), A, 0, NULL, NULL);
     printf("\nEnqueueWriteBuffer=%d\t",ret);
-    ret = clEnqueueWriteBuffer(command_queue, b_mem_obj, CL_TRUE, 0, LIST_SIZE
+    /*ret = clEnqueueWriteBuffer(command_queue, b_mem_obj, CL_TRUE, 0, LIST_SIZE
             * sizeof(int), B, 0, NULL, NULL);
-    printf("\nEnqueueWriteBuffer=%d\t",ret);
+    printf("\nEnqueueWriteBuffer=%d\t",ret);*/
 
     //Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1,
@@ -89,9 +89,9 @@ int main(void) {
     //Set the arguments of the kernel
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*) &a_mem_obj);
     printf("\nSetKernelArg0=%d\t",ret);
-    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*) &b_mem_obj);
-    printf("\nSetKernelArg1=%d\t",ret);
-    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*) &c_mem_obj);
+    /*ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*) &b_mem_obj);
+    printf("\nSetKernelArg1=%d\t",ret);*/
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*) &c_mem_obj);
     printf("\nSetKernelArg2=%d\t",ret);
     //Execute the OpenCL kernel on the array
     size_t global_item_size = LIST_SIZE;
@@ -113,9 +113,9 @@ int main(void) {
     printf("\nA= ");
     for (i = 0; i < LIST_SIZE; ++i)
         printf("%d\t", A[i]);
-    printf("\nB= ");
-    for (i = 0; i < LIST_SIZE; ++i)
-        printf("%d\t", B[i]);
+    //printf("\nB= ");
+    /*for (i = 0; i < LIST_SIZE; ++i)
+        printf("%d\t", B[i]);*/
     printf("\nC= ");
     for (i = 0; i < LIST_SIZE; ++i)
         printf("%d\t", C[i]);
@@ -128,8 +128,8 @@ int main(void) {
     ret = clReleaseKernel(kernel);
     printf("\nReleaseKernel=%d\t",ret);
     ret = clReleaseMemObject(a_mem_obj);
-    printf("\nmem_object_a=%d\t",ret);
-    ret = clReleaseMemObject(b_mem_obj);
+    /*printf("\nmem_object_a=%d\t",ret);
+    ret = clReleaseMemObject(b_mem_obj);*/
     printf("\nmem_object_b=%d\t",ret);
     ret = clReleaseMemObject(c_mem_obj);
     printf("\nmem_object_c=%d\t",ret);
@@ -139,7 +139,7 @@ int main(void) {
     printf("\nReleaseContext=%d\t",ret);
     
     free(A);
-    free(B);
+    //free(B);
     free(C);
     
     getchar();
