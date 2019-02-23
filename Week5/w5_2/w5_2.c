@@ -84,7 +84,7 @@ int main(void) {
     printf("\nBuildProgram=%d\t",ret);   
 
     //Create the OpenCL kernel object
-    cl_kernel kernel = clCreateKernel(program, "vector_octal", &ret);
+    cl_kernel kernel = clCreateKernel(program, "vector_add", &ret);
 
     //Set the arguments of the kernel
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*) &a_mem_obj);
