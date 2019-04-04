@@ -1,0 +1,38 @@
+#include <stdio.h>
+
+__global__ void add(int *a, int *b, int *c)
+{
+	int i = blockIdx.x;
+	*(c+i) = *(a+i) + *(b+i);
+}
+int main(void)
+{
+	int N=3;
+	int a[][] = {{3, 4, 5}, {6, 5, 6}, {1,2,3}};
+	int b[][] = {{1, 2, 3}, {1, 1, 1}, {1,2,3}};
+	int c[N][N];
+	// host copies of variables a, b & c
+	int *d_a, *d_b, *d_c;
+	// device copies of variables a, b & c
+	int size = N*sizeof(int);
+	// Allocate space for device copies of a, b, c
+	cudaMalloc((void **)&d_a, size);
+	cudaMalloc((void **)&d_b, size);
+	cudaMalloc((void **)&d_c, size);
+	// Setup input values
+
+	// Copy inputs to device
+	cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
+	// Launch add() kernel on GPU
+	add<<<N,1>>>(d_a, d_b, d_c);
+	// Copy result back to host
+	cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
+	printf("Hello %d %d %d %d\n", c[0], c[1],c[2], c[3]);
+	//print result
+	// Cleanup
+	cudaFree(d_a);
+	cudaFree(d_b);
+	cudaFree(d_c);
+	return 0;
+}
