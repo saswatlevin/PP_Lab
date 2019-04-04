@@ -1,0 +1,128 @@
+#include <stdio.h>
+
+__global__ void sub(char *a,char *b,int *lenA,int *lenB)
+{
+	int id=threadIdx.x;
+	int flag=1;
+	for(int i=0;i<*lenB;i++)
+	{
+		if(a[id+i]!=b[i])
+		{
+			flag=0;
+			break;
+		}
+	}
+	if(flag==1)
+		printf("FOUND\n");
+}
+
+int main()
+{
+	char a[20], b[20];
+	int *d_m,*d_v;
+	char *d_a, *d_b;
+
+	printf("Enter String:");
+	scanf("%s",a);
+	printf("Enter Sub String:");
+	scanf("%s",b);
+
+	int sizeA = sizeof(char)*strlen(a);
+	int sizeB = sizeof(char)*strlen(b);
+	int lenA=strlen(a);
+	int lenB=strlen(b);
+
+	cudaMalloc((void**)&d_a,sizeA);
+	cudaMalloc((void**)&d_b,sizeB);
+	cudaMalloc((void**)&d_m,sizeof(int));
+	cudaMalloc((void**)&d_v,sizeof(int));
+
+	cudaMemcpy(d_a, &a, sizeA, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_b, &b, sizeB, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_m, &lenA, sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_v, &lenB, sizeof(int), cudaMemcpyHostToDevice);
+
+	sub<<<1,lenA>>>(d_a, d_b,d_m,d_v);
+	cudaFree(d_a);
+	cudaFree(d_b);
+	cudaFree(d_m);
+	cudaFree(d_v);
+}
+
+#include <stdio.h>
+
+__global__ void rev(char *a,char *b,int *len)
+{
+	int id=threadIdx.x;
+	b[id]=a[*len-id-1];
+	b[*len-id-1]=a[id];
+}
+
+int main()
+{
+	char a[20], b[20];
+	int *d_m;
+	char *d_a, *d_b;
+
+	printf("Enter String:");
+	scanf("%s",a);
+
+	int size = sizeof(int)*strlen(a);
+	int len=strlen(a);
+
+	cudaMalloc((void**)&d_a,size);
+	cudaMalloc((void**)&d_b,size);
+	cudaMalloc((void**)&d_m,sizeof(int));
+
+	cudaMemcpy(d_a, &a, size, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_m, &len, sizeof(int), cudaMemcpyHostToDevice);
+
+	rev<<<1,len>>>(d_a, d_b,d_m);
+
+	cudaMemcpy(&b,d_b, size, cudaMemcpyDeviceToHost);
+	printf("%s\n",b);
+	cudaFree(d_a);
+	cudaFree(d_b);
+	cudaFree(d_m);
+}
+#include <stdio.h>
+
+__global__ void rev(char *a,int *len)
+{
+	int id=threadIdx.x;
+	int val=a[id];
+	int k=1;
+	int sum=0;
+	while(val>0)
+	{
+		int rem=val%2;
+		rem*=k;
+		k*=10;
+		val/=2;
+		sum+=rem;
+	}
+	printf("%c\t%d\n",a[id],sum);
+}
+
+int main()
+{
+	char a[20];
+	int *d_m;
+	char *d_a;
+
+	printf("Enter String:");
+	scanf("%s",a);
+
+	int size = sizeof(int)*strlen(a);
+	int len=strlen(a);
+
+	cudaMalloc((void**)&d_a,size);
+	cudaMalloc((void**)&d_m,sizeof(int));
+
+	cudaMemcpy(d_a, &a, size, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_m, &len, sizeof(int), cudaMemcpyHostToDevice);
+
+	rev<<<1,len>>>(d_a,d_m);
+	cudaFree(d_a);
+	cudaFree(d_m);
+}
